@@ -1,4 +1,5 @@
 from numpy import true_divide
+import pywhatkit as kt
 import speech_recognition as sr
 import pyttsx3
 import datetime
@@ -12,14 +13,30 @@ import wolframalpha
 import json
 import requests
 
+keyword = {
+    "search":"cerca",
+    "name": "jarvis",
+    "videoPlayer":"youtube"
+}
+
 started = False
 engine = pyttsx3.init('sapi5')
 print(engine.getProperty('rate'))
 engine.setProperty('rate',140)
 voices = engine.getProperty('voices')
-engine.setProperty('voice',voices[3].id)
+engine.setProperty('voice',voices[0].id)
 for voice in engine.getProperty('voices'):
     print(voice.id)
+
+def cleanRequest(type, statement):
+    request = statement
+    if(type == keyword['videoPlayer']):
+        request = request.replace(keyword['search'],'')
+        request = request.replace('su','')
+        request = request.replace(keyword['videoPlayer'],'')
+    elif type == 'google':
+        request = request.replace(keyword['search'],'')
+    return request
 
 def speak(text):
     engine.say(text)
@@ -70,9 +87,10 @@ def takeCommand():
 speak("...Signore..... mi sto avviando")
 
 if __name__ == '__main__':
+    webbrowser.register('chrome',None)
     while True:
         initialize = startJarvis().lower()
-        if("jarvis" in initialize):
+        if(keyword["name"] in initialize):
             started = True
         while started:
             speak("Che cosa posso fare per te?")
@@ -81,7 +99,6 @@ if __name__ == '__main__':
                 continue
             if "basta" in statement or "annulla" in statement or "chiudi" in statement or "stop" in statement:
                 speak('OK')
-                print('your personal assistant G-one is shutting down,Good bye')
                 started = False
                 break
             # if 'wikipedia' in statement:
@@ -92,20 +109,24 @@ if __name__ == '__main__':
             #     print(results)
             #     speak(results)
             # el
-            if 'youtube' in statement:
-                webbrowser.open_new_tab("https://www.youtube.com")
-                speak("Avvio Youtube")
+            if keyword['videoPlayer'] in statement:
+                speak("Sto cercando su "+keyword['videoPlayer'])
+                request = cleanRequest(keyword['videoPlayer'],statement)
+                if request == "":
+                     webbrowser.open_new_tab("https://www."+keyword['videoPlayer']+".com")
+                else:
+                    webbrowser.open_new_tab("https://www."+keyword['videoPlayer']+".com/results?search_query="+request)
+                
                 time.sleep(5)
                 started = False
-            elif 'apri google' in statement:
-                webbrowser.open_new_tab("https://www.google.com")
-                speak("Sto aprendo Google Chrome")
-                time.sleep(5)
+            elif 'cerca' in statement:
+                speak("Sto cercando")
+                request = cleanRequest('google',statement)
+                kt.search(request)
                 started = False
             elif 'open gmail' in statement:
                 webbrowser.open_new_tab("gmail.com")
                 speak("Google Mail open now")
-                time.sleep(5) 
                 started = False
             elif 'time' in statement:
                 strTime=datetime.datetime.now().strftime("%H:%M:%S")
